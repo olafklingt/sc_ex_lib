@@ -20,6 +20,12 @@ defmodule SuperCollider.WarpSpec do
       :boostcut -> new(-20, 20, :db)
       :gate -> new(0, 1, :lin)
       :pan -> new(-1, 1, :lin)
+      :out -> new(0, 1000, :lin)
+      :in -> new(0, 1000, :lin)
+      :attack -> new(1 / 20000, 1, :exp)
+      :release -> new(1 / 20000, 1, :exp)
+      :compression -> new(0, 20, :lin)
+      :time -> new(0, 5 * 60, :lin)
       _ -> raise "no default spec found for key: #{inspect(key)}"
     end
   end
