@@ -15,7 +15,8 @@ defmodule SuperCollider.WarpSpec do
       :lofreq -> new(0.1, 100, :exp)
       :widefreq -> new(0.1, 20000, :exp)
       :rq -> new(0.001, 2, :exp)
-      :amp -> new(0, 1, :amp)
+      :q -> new(0.5, 100, :exp)
+      :amp -> new(0, 2, :amp)
       :db -> new(-96, 0, :db)
       :boostcut -> new(-20, 20, :db)
       :gate -> new(0, 1, :lin)
@@ -25,7 +26,12 @@ defmodule SuperCollider.WarpSpec do
       :attack -> new(1 / 20000, 1, :exp)
       :release -> new(1 / 20000, 1, :exp)
       :compression -> new(0, 20, :lin)
+      :delay -> new(0, 1, :lin)
       :time -> new(0, 5 * 60, :lin)
+      :transition_time -> new(0, 5 * 60, :lin)
+      :any -> new(-1.0e38, 1.0e38, :lin)
+      # bad names:
+      :no -> new(-1.0e38, 1.0e38, :lin)
       _ -> raise "no default spec found for key: #{inspect(key)}"
     end
   end
