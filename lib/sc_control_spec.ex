@@ -12,7 +12,7 @@ defmodule SuperCollider.WarpSpec do
   def get_default(key) do
     case key do
       :freq -> new(20, 20000, :exp)
-      :lofreq -> new(0.1, 100, :exp)
+      :lofreq -> new(0.01, 100, :exp)
       :widefreq -> new(0.1, 20000, :exp)
       :rq -> new(0.001, 2, :exp)
       :q -> new(0.5, 100, :exp)
@@ -23,10 +23,11 @@ defmodule SuperCollider.WarpSpec do
       :pan -> new(-1, 1, :lin)
       :out -> new(0, 1000, :lin)
       :in -> new(0, 1000, :lin)
-      :attack -> new(1 / 20000, 1, :exp)
-      :release -> new(1 / 20000, 1, :exp)
+      :attack -> new(1 / 20000, 10, :exp)
+      :release -> new(1 / 20000, 10, :exp)
       :compression -> new(0, 20, :lin)
       :delay -> new(0, 1, :lin)
+      :rdur -> new(0.0001, 1, :lin)
       :time -> new(0, 5 * 60, :lin)
       :transition_time -> new(0, 5 * 60, :lin)
       :any -> new(-1.0e38, 1.0e38, :lin)
