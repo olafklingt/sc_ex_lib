@@ -21,7 +21,7 @@ defmodule SuperCollider.WarpSpec do
       :boostcut -> new(-20, 20, :db)
       :gate -> new(0, 1, :lin)
       :pan -> new(-1, 1, :lin)
-      :out -> new(0, 1000, :lin)
+      :_out -> new(0, 1000, :lin)
       :in -> new(0, 1000, :lin)
       :attack -> new(1 / 20000, 10, :exp)
       :release -> new(1 / 20000, 10, :exp)
@@ -29,7 +29,7 @@ defmodule SuperCollider.WarpSpec do
       :delay -> new(0, 1, :lin)
       :rdur -> new(0.0001, 1, :lin)
       :time -> new(0, 5 * 60, :lin)
-      :transition_time -> new(0, 5 * 60, :lin)
+      :_transition_time -> new(0, 5 * 60, :lin)
       :any -> new(-1.0e38, 1.0e38, :lin)
       # bad names:
       :no -> new(-1.0e38, 1.0e38, :lin)
