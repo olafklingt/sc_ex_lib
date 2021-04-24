@@ -16,7 +16,7 @@ defmodule SuperCollider.WarpSpec do
       :widefreq -> new(0.1, 20000, :exp)
       :rq -> new(0.001, 2, :exp)
       :q -> new(0.5, 100, :exp)
-      :amp -> new(0, 2, :amp)
+      :amp -> new(0, 10, :amp)
       :db -> new(-96, 0, :db)
       :boostcut -> new(-20, 20, :db)
       :gate -> new(0, 1, :lin)
@@ -29,6 +29,9 @@ defmodule SuperCollider.WarpSpec do
       :delay -> new(0, 1, :lin)
       :rdur -> new(0.0001, 1, :lin)
       :time -> new(0, 5 * 60, :lin)
+      :divmul2 -> new(0.5, 2, :divmul)
+      :divmul10 -> new(0.1, 10, :divmul)
+      :divmul100 -> new(0.01, 100, :divmul)
       :_transition_time -> new(0, 5 * 60, :lin)
       :any -> new(-1.0e38, 1.0e38, :lin)
       # bad names:
@@ -53,6 +56,7 @@ defmodule SuperCollider.WarpSpec do
     map =
       case type do
         :lin -> &SuperCollider.WarpSpec.lin_map/2
+        :divmul -> &SuperCollider.WarpSpec.divmul_map/2
         :exp -> &SuperCollider.WarpSpec.exp_map/2
         :cos -> &SuperCollider.WarpSpec.cos_map/2
         :sin -> &SuperCollider.WarpSpec.sin_map/2
@@ -64,6 +68,7 @@ defmodule SuperCollider.WarpSpec do
     unmap =
       case type do
         :lin -> &SuperCollider.WarpSpec.lin_unmap/2
+        :divmul -> &SuperCollider.WarpSpec.divmul_unmap/2
         :exp -> &SuperCollider.WarpSpec.exp_unmap/2
         :cos -> &SuperCollider.WarpSpec.cos_unmap/2
         :sin -> &SuperCollider.WarpSpec.sin_unmap/2
@@ -122,21 +127,42 @@ defmodule SuperCollider.WarpSpec do
     (value - spec.minval) / range(spec)
   end
 
+  @spec divmul_map(SuperCollider.WarpSpec.t(), number) :: number
+  def divmul_map(spec, value) do
+    if value < 0.5 do
+      value = value * 2
+      lr = 1 - spec.minval
+      value * lr + spec.minval
+    else
+      value = (value - 0.5) * 2
+      lr = spec.maxval - 1
+      value * lr + 1
+    end
+  end
+
+  @spec divmul_unmap(SuperCollider.WarpSpec.t(), number) :: number
+  def divmul_unmap(spec, value) do
+    if value < 1 do
+      lr = 1 - spec.minval
+      (value - spec.minval) / lr / 2
+    else
+      lr = spec.maxval - 1
+      (value - 1) / lr / 2 + 0.5
+    end
+  end
+
   @spec exp_map(SuperCollider.WarpSpec.t(), number) :: number
   def exp_map(spec, value) do
-    # maps a value from [0..1] to spec range
     :math.pow(ratio(spec), value) * spec.minval
   end
 
   @spec exp_unmap(SuperCollider.WarpSpec.t(), number) :: number
   def exp_unmap(spec, value) do
-    # maps a value from spec range to [0..1]
     :math.log(value / spec.minval) / :math.log(ratio(spec))
   end
 
   @spec curve_map(SuperCollider.WarpSpec.t(), number) :: number
   def curve_map(spec, value) do
-    # maps a value from [0..1] to spec range
     grow = :math.exp(spec.type)
     a = range(spec) / (1.0 - grow)
     b = spec.minval + a
@@ -145,7 +171,6 @@ defmodule SuperCollider.WarpSpec do
 
   @spec curve_unmap(SuperCollider.WarpSpec.t(), number) :: number
   def curve_unmap(spec, value) do
-    # maps a value from spec range to [0..1]
     grow = :math.exp(spec.type)
     a = range(spec) / (1.0 - grow)
     b = spec.minval + a
@@ -154,36 +179,29 @@ defmodule SuperCollider.WarpSpec do
 
   @spec cos_map(SuperCollider.WarpSpec.t(), number) :: number
   def cos_map(spec, value) do
-    # maps a value from [0..1] to spec range
     lin_map(spec, 0.5 - :math.cos(:math.pi() * value) * 0.5)
   end
 
   @spec cos_unmap(SuperCollider.WarpSpec.t(), number) :: number
   def cos_unmap(spec, value) do
-    # maps a value from spec range to [0..1]
     :math.acos(1.0 - lin_unmap(spec, value) * 2.0) / :math.pi()
   end
 
   @spec sin_map(SuperCollider.WarpSpec.t(), number) :: number
   def sin_map(spec, value) do
-    # maps a value from [0..1] to spec range
     lin_map(spec, :math.sin(0.5 * :math.pi() * value))
   end
 
   @spec sin_unmap(SuperCollider.WarpSpec.t(), number) :: number
   def sin_unmap(spec, value) do
-    # maps a value from spec range to [0..1]
     :math.asin(lin_unmap(spec, value)) / 0.5 * :math.pi()
   end
 
   @spec amp_map(SuperCollider.WarpSpec.t(), number) :: number
   def amp_map(spec, value) do
-    # maps a value from [0..1] to spec range
     if(range(spec) >= 0) do
       value * value * range(spec) + spec.minval
     else
-      # // formula can be reduced to (2*v) - v.squared
-      # // but the 2 subtractions would be faster
       mv = 1 - value
       (1 - mv * mv) * range(spec) + spec.minval
     end
@@ -191,7 +209,6 @@ defmodule SuperCollider.WarpSpec do
 
   @spec amp_unmap(SuperCollider.WarpSpec.t(), number) :: number
   def amp_unmap(spec, value) do
-    # maps a value from spec range to [0..1]
     if(range(spec) >= 0) do
       :math.sqrt((value - spec.minval) / range(spec))
     else
@@ -208,7 +225,6 @@ defmodule SuperCollider.WarpSpec do
   end
 
   def db_map(spec, value) do
-    # maps a value from [0..1] to spec range
     range = dbamp(spec.maxval) - dbamp(spec.minval)
 
     if(range >= 0) do
@@ -220,7 +236,6 @@ defmodule SuperCollider.WarpSpec do
   end
 
   def db_unmap(spec, value) do
-    # maps a value from spec range to [0..1]
     if(range(spec) >= 0) do
       :math.sqrt((dbamp(value) - dbamp(spec.minval)) / (dbamp(spec.maxval) - dbamp(spec.minval)))
     else
